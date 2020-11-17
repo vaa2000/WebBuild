@@ -1,1 +1,639 @@
+#Recommendation sys(R.S) are of 2 types
+#r.s is extremely complex  & hence resource intensive
+'''
+1)Content-Based R.S                                   2)Collaborative filtering R.S
+its focused on attr of items and                      it uses user's bahaviour it sees user similar to you also buys these things
 
+gives recommendation based on simi                     user1 likes pizza,pasta and coke 
+b/w them                                               user2 likes pizza and pasta but has never tried coke then u will recommend coke
+User1 likes orange,litchi,apple,banana                 
+User2 likes orange,apple                               Collaborative filtering R.S is divided into 2 parts 
+User3 likes apple                                      1)model based
+so from above data User1 and User2 like apple          2)memory based
+orange both=>apple ,orange r simi
+& User3 likes apple so its probabale that he may 
+like orange too
+
+Recommendation sys req a lot of data so if u hv learnt linear regression and logistics u can work with 1000/2000 datasets
+Dataset that we re gonna use is movielense dataset
+Google search movielense 100k dataset
+why 100k as there are 1000 such 100 data points
+1st option ->ml-100k.zip->out of many files here we use u.data and u.item we ll explore content inside this file
+'''
+"\n1)Content-Based R.S                                   2)Collaborative filtering R.S\nits focused on attr of items and                      it uses user's bahaviour it sees user similar to you also buys these things\n\ngives recommendation based on simi                     user1 likes pizza,pasta and coke \nb/w them                                               user2 likes pizza and pasta but has never tried coke then u will recommend coke\nUser1 likes orange,litchi,apple,banana                 \nUser2 likes orange,apple                               Collaborative filtering R.S is divided into 2 parts \nUser3 likes apple                                      1)model based\nso from above data User1 and User2 like apple          2)memory based\norange both=>apple ,orange r simi\n& User3 likes apple so its probabale that he may \nlike orange too\n\nRecommendation sys req a lot of data so if u hv learnt linear regression and logistics u can work with 1000/2000 datasets\nDataset that we re gonna use is movielense dataset\nGoogle search movielense 100k dataset\nwhy 100k as there are 1000 such 100 data points\n1st option ->ml-100k.zip->out of many files here we use u.data and u.item we ll explore content inside this file\n"
+import numpy as np
+import pandas as pd
+import warnings
+warnings.filterwarnings('ignore')#so that even if any warning arrives its not displayed 
+#csv is a comma separated file =>values in the file are separated by commas
+#but if u see these files they are tab separated so we can use same read_csv method in pandas but with an attr sep='\t' to raed them
+columns_names=["user_id","item_id","rating","timestamp"]
+df=pd.read_csv("ml-100k/u.data",sep='\t',names=columns_names)
+df.head()#u can see ther's no header and 1st entry is coming into header part so what we can do is apply some coln or give some coln names
+#if u read instr of this dataset
+#user id is id of user item_id is id of a movie 
+user_id	item_id	rating	timestamp
+0	196	242	3	881250949
+1	186	302	3	891717742
+2	22	377	1	878887116
+3	244	51	2	880606923
+4	166	346	1	886397596
+df.shape#in o/p around 1lakh rows and 4 coln
+(100000, 4)
+#lets check no of unique users
+df['user_id']#gives user_ids
+0        196
+1        186
+2         22
+3        244
+4        166
+        ... 
+99995    880
+99996    716
+99997    276
+99998     13
+99999     12
+Name: user_id, Length: 100000, dtype: int64
+df['user_id'].nunique()#943 unique users
+943
+df['item_id'].nunique()#1682 unique movies 
+1682
+#rn w edonno which item_id corres to whcih movie
+#what u.item file
+pd.read_csv("ml-100k/u.item",sep="\|",header=None)
+#in o/p we want onle movie_name and corres item_id coln i.e 1st 2coln
+0	1	2	3	4	5	6	7	8	9	...	14	15	16	17	18	19	20	21	22	23
+0	1	Toy Story (1995)	01-Jan-1995	NaN	http://us.imdb.com/M/title-exact?Toy%20Story%2...	0	0	0	1	1	...	0	0	0	0	0	0	0	0	0	0
+1	2	GoldenEye (1995)	01-Jan-1995	NaN	http://us.imdb.com/M/title-exact?GoldenEye%20(...	0	1	1	0	0	...	0	0	0	0	0	0	0	1	0	0
+2	3	Four Rooms (1995)	01-Jan-1995	NaN	http://us.imdb.com/M/title-exact?Four%20Rooms%...	0	0	0	0	0	...	0	0	0	0	0	0	0	1	0	0
+3	4	Get Shorty (1995)	01-Jan-1995	NaN	http://us.imdb.com/M/title-exact?Get%20Shorty%...	0	1	0	0	0	...	0	0	0	0	0	0	0	0	0	0
+4	5	Copycat (1995)	01-Jan-1995	NaN	http://us.imdb.com/M/title-exact?Copycat%20(1995)	0	0	0	0	0	...	0	0	0	0	0	0	0	1	0	0
+...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+1677	1678	Mat' i syn (1997)	06-Feb-1998	NaN	http://us.imdb.com/M/title-exact?Mat%27+i+syn+...	0	0	0	0	0	...	0	0	0	0	0	0	0	0	0	0
+1678	1679	B. Monkey (1998)	06-Feb-1998	NaN	http://us.imdb.com/M/title-exact?B%2E+Monkey+(...	0	0	0	0	0	...	0	0	0	0	0	1	0	1	0	0
+1679	1680	Sliding Doors (1998)	01-Jan-1998	NaN	http://us.imdb.com/Title?Sliding+Doors+(1998)	0	0	0	0	0	...	0	0	0	0	0	1	0	0	0	0
+1680	1681	You So Crazy (1994)	01-Jan-1994	NaN	http://us.imdb.com/M/title-exact?You%20So%20Cr...	0	0	0	0	0	...	0	0	0	0	0	0	0	0	0	0
+1681	1682	Scream of Stone (Schrei aus Stein) (1991)	08-Mar-1996	NaN	http://us.imdb.com/M/title-exact?Schrei%20aus%...	0	0	0	0	0	...	0	0	0	0	0	0	0	0	0	0
+1682 rows × 24 columns
+
+movies_titles=pd.read_csv("ml-100k/u.item",sep="\|",header=None)
+movies_titles.shape
+(1682, 24)
+movies_titles=movies_titles[[0,1]]
+movies_titles.head()
+0	1
+0	1	Toy Story (1995)
+1	2	GoldenEye (1995)
+2	3	Four Rooms (1995)
+3	4	Get Shorty (1995)
+4	5	Copycat (1995)
+movies_titles.columns=["item_id","title"]
+movies_titles.head()
+item_id	title
+0	1	Toy Story (1995)
+1	2	GoldenEye (1995)
+2	3	Four Rooms (1995)
+3	4	Get Shorty (1995)
+4	5	Copycat (1995)
+#now u have 2 dataframe 1 is df and 1 is movies_titles
+#u can merge and create dataframe that has user_id,item_id,rating,timestamp,title(item_id is common coln in both)i.e
+# u shd finally get a dataframe which as 4 coln in df and 5th coln of movie_name of movie corres to item_id
+#for that merge fun in pandas
+df1=pd.merge(df,movies_titles,on="item_id")#2
+
+df=pd.merge(df,movies_titles,on="item_id")#2daatframes which we wanna merge coln on which we wanna merge "item_id"
+df.tail()
+user_id	item_id	rating	timestamp	title
+99995	840	1674	4	891211682	Mamma Roma (1962)
+99996	655	1640	3	888474646	Eighth Day, The (1996)
+99997	655	1637	3	888984255	Girls Town (1996)
+99998	655	1630	3	887428735	Silence of the Palace, The (Saimt el Qusur) (1...
+99999	655	1641	3	887427810	Dadetown (1995)
+#exploratory data analysis
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_style('white')#even if u don't set any style it works well
+#we hv 100 1000 entries means 1 user can give review or rating to lot of other movies
+#suposse movie 'Capetown ' received 80 reviews/ratings few people reting 1,3,5  avg_rating?=> by grouping dataframe
+df.groupby('title').mean() #in o/p for each movie title we get o/p as avg of corres val in each coln
+#but avg of user_id,item_id doesn't make any sense and we're not concerned of avg in coln timestamp we 're concerned only of avg rating'
+user_id	item_id	rating	timestamp
+title				
+'Til There Was You (1997)	383.777778	1300.0	2.333333	8.861152e+08
+1-900 (1994)	477.000000	1353.0	2.600000	8.797260e+08
+101 Dalmatians (1996)	450.330275	225.0	2.908257	8.829281e+08
+12 Angry Men (1957)	453.552000	178.0	4.344000	8.828963e+08
+187 (1997)	517.097561	330.0	3.024390	8.850084e+08
+...	...	...	...	...
+Young Guns II (1990)	504.068182	1188.0	2.772727	8.821855e+08
+Young Poisoner's Handbook, The (1995)	452.487805	547.0	3.341463	8.821438e+08
+Zeus and Roxanne (1997)	532.833333	1164.0	2.166667	8.775338e+08
+unknown	311.888889	267.0	3.444444	8.756379e+08
+Á köldum klaka (Cold Fever) (1994)	655.000000	1633.0	3.000000	8.893313e+08
+1664 rows × 4 columns
+
+df.groupby('title').mean()['rating']
+title
+'Til There Was You (1997)                2.333333
+1-900 (1994)                             2.600000
+101 Dalmatians (1996)                    2.908257
+12 Angry Men (1957)                      4.344000
+187 (1997)                               3.024390
+                                           ...   
+Young Guns II (1990)                     2.772727
+Young Poisoner's Handbook, The (1995)    3.341463
+Zeus and Roxanne (1997)                  2.166667
+unknown                                  3.444444
+Á köldum klaka (Cold Fever) (1994)       3.000000
+Name: rating, Length: 1664, dtype: float64
+#to sort by highest rating
+df.groupby('title').mean()['rating'].sort_values()# but it has sorted in ascending order
+title
+Eye of Vichy, The (Oeil de Vichy, L') (1993)    1.0
+Butterfly Kiss (1995)                           1.0
+Daens (1992)                                    1.0
+JLG/JLG - autoportrait de décembre (1994)       1.0
+Touki Bouki (Journey of the Hyena) (1973)       1.0
+                                               ... 
+Someone Else's America (1995)                   5.0
+Star Kid (1997)                                 5.0
+Santa with Muscles (1996)                       5.0
+Prefontaine (1997)                              5.0
+Marlene Dietrich: Shadow and Light (1996)       5.0
+Name: rating, Length: 1664, dtype: float64
+df.groupby('title').mean()['rating'].sort_values(ascending=False)
+#we notice some movies actually have full 5 star rating and this is ab=vg rating,near impossi i.e less no have watched and given 5 star rating SO WE NEED TO AVOID THESE MOVIES
+title
+Marlene Dietrich: Shadow and Light (1996)       5.0
+Prefontaine (1997)                              5.0
+Santa with Muscles (1996)                       5.0
+Star Kid (1997)                                 5.0
+Someone Else's America (1995)                   5.0
+                                               ... 
+Touki Bouki (Journey of the Hyena) (1973)       1.0
+JLG/JLG - autoportrait de décembre (1994)       1.0
+Daens (1992)                                    1.0
+Butterfly Kiss (1995)                           1.0
+Eye of Vichy, The (Oeil de Vichy, L') (1993)    1.0
+Name: rating, Length: 1664, dtype: float64
+df.groupby('title').mean()['rating'].sort_values(ascending=False).head()
+title
+Marlene Dietrich: Shadow and Light (1996)     5.0
+Prefontaine (1997)                            5.0
+Santa with Muscles (1996)                     5.0
+Star Kid (1997)                               5.0
+Someone Else's America (1995)                 5.0
+Name: rating, dtype: float64
+#how many times this movie has been watched
+df.groupby('title').count()
+#each coln shows count of occurence i.e total times that movie was mentioned in table 
+#i.e 1st movie was watched by 9 people
+user_id	item_id	rating	timestamp
+title				
+'Til There Was You (1997)	9	9	9	9
+1-900 (1994)	5	5	5	5
+101 Dalmatians (1996)	109	109	109	109
+12 Angry Men (1957)	125	125	125	125
+187 (1997)	41	41	41	41
+...	...	...	...	...
+Young Guns II (1990)	44	44	44	44
+Young Poisoner's Handbook, The (1995)	41	41	41	41
+Zeus and Roxanne (1997)	6	6	6	6
+unknown	9	9	9	9
+Á köldum klaka (Cold Fever) (1994)	1	1	1	1
+1664 rows × 4 columns
+
+df.groupby('title').count()['rating']
+title
+'Til There Was You (1997)                  9
+1-900 (1994)                               5
+101 Dalmatians (1996)                    109
+12 Angry Men (1957)                      125
+187 (1997)                                41
+                                        ... 
+Young Guns II (1990)                      44
+Young Poisoner's Handbook, The (1995)     41
+Zeus and Roxanne (1997)                    6
+unknown                                    9
+Á köldum klaka (Cold Fever) (1994)         1
+Name: rating, Length: 1664, dtype: int64
+#to see most watched/rated movie
+df.groupby('title').count()['rating'].sort_values(ascending=False)
+#most watched/rated movie is Star Wars this movie will not have 5 star rating as not all 583 persons will give 5 star rating
+title
+Star Wars (1977)                              583
+Contact (1997)                                509
+Fargo (1996)                                  508
+Return of the Jedi (1983)                     507
+Liar Liar (1997)                              485
+                                             ... 
+Man from Down Under, The (1943)                 1
+Marlene Dietrich: Shadow and Light (1996)       1
+Mat' i syn (1997)                               1
+Mille bolle blu (1993)                          1
+Á köldum klaka (Cold Fever) (1994)              1
+Name: rating, Length: 1664, dtype: int64
+#so we can craete a dataframe of ratings
+ratings=pd.DataFrame(df.groupby('title').mean()['rating'])
+ratings.head()
+rating
+title	
+'Til There Was You (1997)	2.333333
+1-900 (1994)	2.600000
+101 Dalmatians (1996)	2.908257
+12 Angry Men (1957)	4.344000
+187 (1997)	3.024390
+#VVVVVVVVVIMP  lets also include count as well in same dataframe by creating 1 more column as number of ratings 
+ratings['num of ratings']=pd.DataFrame(df.groupby('title').count()['rating'])
+ratings
+rating	num of ratings
+title		
+'Til There Was You (1997)	2.333333	9
+1-900 (1994)	2.600000	5
+101 Dalmatians (1996)	2.908257	109
+12 Angry Men (1957)	4.344000	125
+187 (1997)	3.024390	41
+...	...	...
+Young Guns II (1990)	2.772727	44
+Young Poisoner's Handbook, The (1995)	3.341463	41
+Zeus and Roxanne (1997)	2.166667	6
+unknown	3.444444	9
+Á köldum klaka (Cold Fever) (1994)	3.000000	1
+1664 rows × 2 columns
+
+ratings.sort_values(by='rating',ascending=False)
+#1st 5 movies in o/p 5 rating by few people watched hancewe acnnot recommend that movie
+#we need to plot histogram of coln num of ratings
+rating	num of ratings
+title		
+They Made Me a Criminal (1939)	5.0	1
+Marlene Dietrich: Shadow and Light (1996)	5.0	1
+Saint of Fort Washington, The (1993)	5.0	2
+Someone Else's America (1995)	5.0	1
+Star Kid (1997)	5.0	3
+...	...	...
+Eye of Vichy, The (Oeil de Vichy, L') (1993)	1.0	1
+King of New York (1990)	1.0	1
+Touki Bouki (Journey of the Hyena) (1973)	1.0	1
+Bloody Child, The (1996)	1.0	1
+Crude Oasis, The (1995)	1.0	1
+1664 rows × 2 columns
+
+plt.figure(figsize=(10,6))
+plt.hist(ratings['num of ratings'],bins =70)
+plt.show()
+#in o/p on x-axis we hv no of ratings i.ie val representing rating
+#y axis no of times that this rating appears in daatframe
+#if we see in 0 to 10 lot of movies rated just 0 to 10 times
+
+#now lets also plot a histograms of ratings
+plt.hist(ratings['rating'], bins=70)
+plt.show()
+#the movie which is being rated as 5 its very less so very less people rated avg movie as 5
+#this distri is like normal distri mean is simi to 3
+# so most of people have rated any movie as 3
+
+sns.jointplot(x='rating',y='num of ratings',data=ratings,alpha=0.5)
+#this plot says as rating inc the no of ratings also increases
+#as slope of graph increases 
+<seaborn.axisgrid.JointGrid at 0x2c1f3f26f48>
+
+#movie recommendation from pandas
+#lets create a matrix which has user_id on row-axis and movie_titles in coln
+df.head()
+user_id	item_id	rating	timestamp	title
+0	196	242	3	881250949	Kolya (1996)
+1	63	242	3	875747190	Kolya (1996)
+2	226	242	5	883888671	Kolya (1996)
+3	154	242	3	879138235	Kolya (1996)
+4	306	242	5	876503793	Kolya (1996)
+#matrix of user id in rows and movie in coln matrix values consist of rating if no rating is given by user in any case NaN is val in matrix
+movie_mat=df.pivot_table(index="user_id",columns="title",values="rating")#index means rows 
+movie_mat#many NaN in o/p as not many users have watched many movies
+title	'Til There Was You (1997)	1-900 (1994)	101 Dalmatians (1996)	12 Angry Men (1957)	187 (1997)	2 Days in the Valley (1996)	20,000 Leagues Under the Sea (1954)	2001: A Space Odyssey (1968)	3 Ninjas: High Noon At Mega Mountain (1998)	39 Steps, The (1935)	...	Yankee Zulu (1994)	Year of the Horse (1997)	You So Crazy (1994)	Young Frankenstein (1974)	Young Guns (1988)	Young Guns II (1990)	Young Poisoner's Handbook, The (1995)	Zeus and Roxanne (1997)	unknown	Á köldum klaka (Cold Fever) (1994)
+user_id																					
+1	NaN	NaN	2.0	5.0	NaN	NaN	3.0	4.0	NaN	NaN	...	NaN	NaN	NaN	5.0	3.0	NaN	NaN	NaN	4.0	NaN
+2	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	1.0	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+3	NaN	NaN	NaN	NaN	2.0	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+4	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+5	NaN	NaN	2.0	NaN	NaN	NaN	NaN	4.0	NaN	NaN	...	NaN	NaN	NaN	4.0	NaN	NaN	NaN	NaN	4.0	NaN
+...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+939	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+940	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+941	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+942	NaN	NaN	NaN	NaN	NaN	NaN	NaN	3.0	NaN	3.0	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+943	NaN	NaN	NaN	NaN	NaN	2.0	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	4.0	3.0	NaN	NaN	NaN	NaN
+943 rows × 1664 columns
+
+movie_mat.head()#movie having highest no of ratings
+title	'Til There Was You (1997)	1-900 (1994)	101 Dalmatians (1996)	12 Angry Men (1957)	187 (1997)	2 Days in the Valley (1996)	20,000 Leagues Under the Sea (1954)	2001: A Space Odyssey (1968)	3 Ninjas: High Noon At Mega Mountain (1998)	39 Steps, The (1935)	...	Yankee Zulu (1994)	Year of the Horse (1997)	You So Crazy (1994)	Young Frankenstein (1974)	Young Guns (1988)	Young Guns II (1990)	Young Poisoner's Handbook, The (1995)	Zeus and Roxanne (1997)	unknown	Á köldum klaka (Cold Fever) (1994)
+user_id																					
+1	NaN	NaN	2.0	5.0	NaN	NaN	3.0	4.0	NaN	NaN	...	NaN	NaN	NaN	5.0	3.0	NaN	NaN	NaN	4.0	NaN
+2	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	1.0	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+3	NaN	NaN	NaN	NaN	2.0	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+4	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	...	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN	NaN
+5	NaN	NaN	2.0	NaN	NaN	NaN	NaN	4.0	NaN	NaN	...	NaN	NaN	NaN	4.0	NaN	NaN	NaN	NaN	4.0	NaN
+5 rows × 1664 columns
+
+ratings.sort_values
+<bound method DataFrame.sort_values of                                          rating  num of ratings
+title                                                          
+'Til There Was You (1997)              2.333333               9
+1-900 (1994)                           2.600000               5
+101 Dalmatians (1996)                  2.908257             109
+12 Angry Men (1957)                    4.344000             125
+187 (1997)                             3.024390              41
+...                                         ...             ...
+Young Guns II (1990)                   2.772727              44
+Young Poisoner's Handbook, The (1995)  3.341463              41
+Zeus and Roxanne (1997)                2.166667               6
+unknown                                3.444444               9
+Á köldum klaka (Cold Fever) (1994)     3.000000               1
+
+[1664 rows x 2 columns]>
+ 
+ratings.sort_values('num of ratings',ascending=False)
+rating	num of ratings
+title		
+Star Wars (1977)	4.358491	583
+Contact (1997)	3.803536	509
+Fargo (1996)	4.155512	508
+Return of the Jedi (1983)	4.007890	507
+Liar Liar (1997)	3.156701	485
+...	...	...
+Great Day in Harlem, A (1994)	5.000000	1
+Other Voices, Other Rooms (1997)	3.000000	1
+Good Morning (1971)	1.000000	1
+Girls Town (1996)	3.000000	1
+Á köldum klaka (Cold Fever) (1994)	3.000000	1
+1664 rows × 2 columns
+
+ratings.sort_values('num of ratings',ascending=False).head()
+rating	num of ratings
+title		
+Star Wars (1977)	4.358491	583
+Contact (1997)	3.803536	509
+Fargo (1996)	4.155512	508
+Return of the Jedi (1983)	4.007890	507
+Liar Liar (1997)	3.156701	485
+movie_mat['Star Wars (1977)']
+user_id
+1      5.0
+2      5.0
+3      NaN
+4      5.0
+5      4.0
+      ... 
+939    NaN
+940    4.0
+941    NaN
+942    5.0
+943    4.0
+Name: Star Wars (1977), Length: 943, dtype: float64
+#we'll correlate movie_ratings of Star_Wars series(as o/p is a series its not a dataframe) with entire movie_matrix it'll give correlation of each movie
+starwars_user_ratings=movie_mat['Star Wars (1977)']
+starwars_user_ratings.head()
+user_id
+1    5.0
+2    5.0
+3    NaN
+4    5.0
+5    4.0
+Name: Star Wars (1977), dtype: float64
+movie_mat.corrwith(starwars_user_ratings)
+title
+'Til There Was You (1997)                0.872872
+1-900 (1994)                            -0.645497
+101 Dalmatians (1996)                    0.211132
+12 Angry Men (1957)                      0.184289
+187 (1997)                               0.027398
+                                           ...   
+Young Guns II (1990)                     0.228615
+Young Poisoner's Handbook, The (1995)   -0.007374
+Zeus and Roxanne (1997)                  0.818182
+unknown                                  0.723123
+Á köldum klaka (Cold Fever) (1994)            NaN
+Length: 1664, dtype: float64
+similar_to_starwars=movie_mat.corrwith(starwars_user_ratings)
+#o/p is a series & we can convert series to pandas dataframe
+similar_to_starwars
+#see there r NaN val as well so w ehv to drop these NaN val,why these NaN val=>as there was no person who rated bothStarwars & that particular movie=>corr DNE
+title
+'Til There Was You (1997)                0.872872
+1-900 (1994)                            -0.645497
+101 Dalmatians (1996)                    0.211132
+12 Angry Men (1957)                      0.184289
+187 (1997)                               0.027398
+                                           ...   
+Young Guns II (1990)                     0.228615
+Young Poisoner's Handbook, The (1995)   -0.007374
+Zeus and Roxanne (1997)                  0.818182
+unknown                                  0.723123
+Á köldum klaka (Cold Fever) (1994)            NaN
+Length: 1664, dtype: float64
+corr_starwars=pd.DataFrame(similar_to_starwars)
+corr_starwars
+0
+title	
+'Til There Was You (1997)	0.872872
+1-900 (1994)	-0.645497
+101 Dalmatians (1996)	0.211132
+12 Angry Men (1957)	0.184289
+187 (1997)	0.027398
+...	...
+Young Guns II (1990)	0.228615
+Young Poisoner's Handbook, The (1995)	-0.007374
+Zeus and Roxanne (1997)	0.818182
+unknown	0.723123
+Á köldum klaka (Cold Fever) (1994)	NaN
+1664 rows × 1 columns
+
+corr_starwars=pd.DataFrame(similar_to_starwars,columns=['Correlation'])
+corr_starwars
+Correlation
+title	
+'Til There Was You (1997)	0.872872
+1-900 (1994)	-0.645497
+101 Dalmatians (1996)	0.211132
+12 Angry Men (1957)	0.184289
+187 (1997)	0.027398
+...	...
+Young Guns II (1990)	0.228615
+Young Poisoner's Handbook, The (1995)	-0.007374
+Zeus and Roxanne (1997)	0.818182
+unknown	0.723123
+Á köldum klaka (Cold Fever) (1994)	NaN
+1664 rows × 1 columns
+
+#to drop NaN temporarily
+corr_starwars.dropna()
+Correlation
+title	
+'Til There Was You (1997)	0.872872
+1-900 (1994)	-0.645497
+101 Dalmatians (1996)	0.211132
+12 Angry Men (1957)	0.184289
+187 (1997)	0.027398
+...	...
+Young Guns (1988)	0.186377
+Young Guns II (1990)	0.228615
+Young Poisoner's Handbook, The (1995)	-0.007374
+Zeus and Roxanne (1997)	0.818182
+unknown	0.723123
+1410 rows × 1 columns
+
+#WHY I said temporary drop NaN
+corr_starwars
+#Nan still there
+Correlation
+title	
+'Til There Was You (1997)	0.872872
+1-900 (1994)	-0.645497
+101 Dalmatians (1996)	0.211132
+12 Angry Men (1957)	0.184289
+187 (1997)	0.027398
+...	...
+Young Guns II (1990)	0.228615
+Young Poisoner's Handbook, The (1995)	-0.007374
+Zeus and Roxanne (1997)	0.818182
+unknown	0.723123
+Á köldum klaka (Cold Fever) (1994)	NaN
+1664 rows × 1 columns
+
+#to drop NaN permanently
+corr_starwars.dropna(inplace=True)
+#it'll not create new obj with modification it'll modify original obj
+corr_starwars
+Correlation
+title	
+'Til There Was You (1997)	0.872872
+1-900 (1994)	-0.645497
+101 Dalmatians (1996)	0.211132
+12 Angry Men (1957)	0.184289
+187 (1997)	0.027398
+...	...
+Young Guns (1988)	0.186377
+Young Guns II (1990)	0.228615
+Young Poisoner's Handbook, The (1995)	-0.007374
+Zeus and Roxanne (1997)	0.818182
+unknown	0.723123
+1410 rows × 1 columns
+
+corr_starwars.head()
+Correlation
+title	
+'Til There Was You (1997)	0.872872
+1-900 (1994)	-0.645497
+101 Dalmatians (1996)	0.211132
+12 Angry Men (1957)	0.184289
+187 (1997)	0.027398
+#if I like starwars  movie & if u want to suggest any movie
+#suggest movies which are highly correlated with starwars  movie
+corr_starwars.sort_values('Correlation',ascending=False).head(10)
+#corr in o/p can range from -1 to 1
+Correlation
+title	
+Hollow Reed (1996)	1.0
+Commandments (1997)	1.0
+Cosi (1996)	1.0
+No Escape (1994)	1.0
+Stripes (1981)	1.0
+Star Wars (1977)	1.0
+Man of the Year (1995)	1.0
+Beans of Egypt, Maine, The (1994)	1.0
+Old Lady Who Walked in the Sea, The (Vieille qui marchait dans la mer, La) (1991)	1.0
+Outlaw, The (1943)	1.0
+ratings
+rating	num of ratings
+title		
+'Til There Was You (1997)	2.333333	9
+1-900 (1994)	2.600000	5
+101 Dalmatians (1996)	2.908257	109
+12 Angry Men (1957)	4.344000	125
+187 (1997)	3.024390	41
+...	...	...
+Young Guns II (1990)	2.772727	44
+Young Poisoner's Handbook, The (1995)	3.341463	41
+Zeus and Roxanne (1997)	2.166667	6
+unknown	3.444444	9
+Á köldum klaka (Cold Fever) (1994)	3.000000	1
+1664 rows × 2 columns
+
+#we will join corr_starwars dataframe with ratings dataframe to suggest movie reason in notes
+corr_starwars.join(ratings['num of ratings'])#we can join this dataFrame since title coln or index coln is same
+Correlation	num of ratings
+title		
+'Til There Was You (1997)	0.872872	9
+1-900 (1994)	-0.645497	5
+101 Dalmatians (1996)	0.211132	109
+12 Angry Men (1957)	0.184289	125
+187 (1997)	0.027398	41
+...	...	...
+Young Guns (1988)	0.186377	101
+Young Guns II (1990)	0.228615	44
+Young Poisoner's Handbook, The (1995)	-0.007374	41
+Zeus and Roxanne (1997)	0.818182	6
+unknown	0.723123	9
+1410 rows × 2 columns
+
+corr_starwars.head()
+Correlation	num of ratings
+title		
+'Til There Was You (1997)	0.872872	9
+1-900 (1994)	-0.645497	5
+101 Dalmatians (1996)	0.211132	109
+12 Angry Men (1957)	0.184289	125
+187 (1997)	0.027398	41
+#now we don't have to take all the movies we have to take only those movies which have num of rating>100 and are highly correlated
+corr_starwars['num of ratings']>100
+title
+'Til There Was You (1997)                False
+1-900 (1994)                             False
+101 Dalmatians (1996)                     True
+12 Angry Men (1957)                       True
+187 (1997)                               False
+                                         ...  
+Young Guns (1988)                         True
+Young Guns II (1990)                     False
+Young Poisoner's Handbook, The (1995)    False
+Zeus and Roxanne (1997)                  False
+unknown                                  False
+Name: num of ratings, Length: 1410, dtype: bool
+corr_starwars[corr_starwars['num of ratings']>100].sort_values('Correlation',ascending=False)
+Correlation	num of ratings
+title		
+Star Wars (1977)	1.000000	583
+Empire Strikes Back, The (1980)	0.747981	367
+Return of the Jedi (1983)	0.672556	507
+Raiders of the Lost Ark (1981)	0.536117	420
+Austin Powers: International Man of Mystery (1997)	0.377433	130
+...	...	...
+Edge, The (1997)	-0.127167	113
+As Good As It Gets (1997)	-0.130466	112
+Crash (1996)	-0.148507	128
+G.I. Jane (1997)	-0.176734	175
+First Wives Club, The (1996)	-0.194496	160
+334 rows × 2 columns
+
+#google starwars movies
+#now we'll make a fun which will accepta movie & will give recommendations
+def predict_movies(movie_name):
+    movie_user_ratings=movie_mat[movie_name]
+    similar_to_movie=movie_mat.corrwith(movie_user_ratings)
+    corr_movie=pd.DataFrame(similar_to_movie,columns=['Correlation'])
+    corr_movie.dropna(inplace=True)
+    corr_movie=corr_movie.join(ratings['num of ratings'])
+    predictions=corr_movie[corr_movie['num of ratings']>100].sort_values('Correlation',ascending=False)
+    
+    return predictions
+    
+predictions=predict_movies("Titanic (1997)")
+predictions.head()#o/p corr is decreasing we can see similarities in these movies i.e director of these movies are the same
+Correlation	num of ratings
+title		
+Titanic (1997)	1.000000	350
+River Wild, The (1994)	0.497600	146
+Abyss, The (1989)	0.472103	151
+Bram Stoker's Dracula (1992)	0.443560	120
+True Lies (1994)	0.435104	208
+#book and music recommendation can be made in similar ways,make it
