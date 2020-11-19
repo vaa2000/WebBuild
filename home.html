@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Human Team Foundation</title>
+	<link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="home.css">
+
+
+
+    
+<style>
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+}
+
+li {
+  float: left;
+}
+
+li a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+li a:hover {
+  background-color: #111;
+}
+</style>
+</head>
+<body>
+
+<ul>
+  <li><a class="active" href="#home">Home</a></li>
+  <li><a href="about.html">About</a></li>
+  <li><a href="http://localhost/TP/register.php">Register</a></li>
+  <li><a href="http://localhost/TP/login.php">Login</a></li>
+  <li><a href="http://localhost/TP/crud/select_data.php">List of Donations</a></li>
+  
+</ul>
+
+    <div class="slideshow-container" width="100" height="100" >
+
+        <div class="mySlides fade">
+            <div class="numbertext">1 / 3</div>
+            <img src="https://scontent.fbom2-1.fna.fbcdn.net/v/t1.0-9/22853381_1962387354049097_7699536098477505342_n.jpg?_nc_cat=111&ccb=2&_nc_sid=6e5ad9&_nc_ohc=1gXTJ8tDkMEAX8-36zR&_nc_ht=scontent.fbom2-1.fna&oh=39e7ec92b7975e587016a9d3f02452a6&oe=5FDAAD20" style="width:100%">
+
+
+            <div class="text">Caption Text</div>
+        </div>
+
+        <div class="mySlides fade">
+            <div class="numbertext">2 / 3</div>
+            <img src="https://scontent.fbom2-1.fna.fbcdn.net/v/t1.0-9/44166609_2182393985381765_6320078340665376768_n.jpg?_nc_cat=104&ccb=2&_nc_sid=9e2e56&_nc_ohc=fqmb07bIRAgAX-kZT0X&_nc_ht=scontent.fbom2-1.fna&oh=3e51fda6c3d7a224bc11b09c99697c50&oe=5FDAF57F" style="width:100%">
+
+            <div class="text">Caption Two</div>
+        </div>
+
+        <div class="mySlides fade">
+            <div class="numbertext">3 / 3</div>
+            <img src="https://lh3.googleusercontent.com/qFrxdfN0qFtqi5yKkKopP-AaRuEN0es_b610RGguWQhkHLz8JngF03F1sAzfYzK43BxQGSE36MgQ9OdE=w768-h768-n-o-v1" style="width:100%">
+            <div class="text">Caption Three</div>
+        </div>
+    </div>
+
+    <br>
+
+    <div style="text-align:center">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+    </div>
+    <div class="heading">
+        <h3>Together We Can.</h3>
+        <h4>"We Rise By Lifting Others"</h4>
+    </div>
+
+    <footer class="footer">
+        <div class="timings">
+            <p>Opening Hours</p>
+            <p>10:00 am to 9:30 pm</p>
+            <p>Monday to Saturday</p>
+        </div>
+        <div class="address">
+            <p>Address<br>
+                47,navnath wadi,laldonger , Behind poonam petrol pump
+                Sion - Trombay Road
+                Chembur East
+                Mumbai, Maharashtra 400071
+                India</p>
+        </div>
+    </footer>
+    <div class="copyrights">
+        Copyright © 2020 Human Team Foundation - All Rights Reserved.
+    </div>
+
+
+    <script>
+        var slideIndex = 0;
+        showSlides();
+
+        function showSlides() {
+            var i;
+            var slides = document.getElementsByClassName("mySlides");
+            var dots = document.getElementsByClassName("dot");
+            for (i = 0; i < slides.length; i++) {
+                slides[i].style.display = "none";
+            }
+            slideIndex++;
+            if (slideIndex > slides.length) {
+                slideIndex = 1
+            }
+            for (i = 0; i < dots.length; i++) {
+                dots[i].className = dots[i].className.replace(" active", "");
+            }
+            slides[slideIndex - 1].style.display = "block";
+            dots[slideIndex - 1].className += " active";
+            setTimeout(showSlides, 5000);
+        }
+
+    </script>
+
+
+
+
+
+</body>
+</html>

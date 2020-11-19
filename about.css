@@ -1,0 +1,55 @@
+.logo{
+    display: inline-block;
+    margin-right: 40px;
+    font-family: Roboto;
+    font-weight: 500;
+    font-size: 25px;
+    background-color: black;
+}
+
+.nav-items{
+    border-width : 1px;
+    border-style : solid;
+    border-color :grey;
+    border-radius: 5px;
+    padding: 10px;
+    margin-right: 20px;
+    text-decoration: none;
+    margin-left: 150px;
+    background-color: black;
+    color:white;
+}
+.nav-items:hover{
+    background-color: white;
+    color:blue;
+}
+.nav-items:first{
+    margin-left: 150px;
+}
+h1{
+    display:inline-block;
+    margin-left: 500px;
+    font-size: 50px;
+}
+h2{
+    color: blue;
+    font-size: 30px;
+}
+.unity{
+    width: 200px;
+    height: 100px;
+    margin-left: 650px;
+}
+.navbar{
+    background-color: black;
+}
+div{
+    display: inline-block;
+    width: 400px;
+    margin-right: 40px;
+    margin-left: 50px;
+
+}
+p{
+    font-size: 25px;
+}
